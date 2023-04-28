@@ -1,0 +1,13 @@
+# Combine all ASV barplots into one figure using ggpubr
+combined_ASV_plot <- ggarrange(ASV1, ASV2, ASV3, ASV4, ASV5, ASV6, ASV7, ASV8, ASV9, ASV10, ASV11, ASV12, ASV13, ASV14, ASV15, ASV16, ASV17, 
+                               common.legend = TRUE, legend = "right",
+                               ncol = 3, nrow = 6)
+
+# Add annotations to the combined ASV plot
+annotate_figure(combined_ASV_plot,
+                top = text_grob("Normalized Relative Abundance of ASVs Across Populations", color = "black", face = "bold", size = 16, vjust = 1.5),
+                left = text_grob("Normalized Relative Abundance",  color = "black", face = "bold", size = 14, rot = 90, vjust = "0.4"),
+                bottom = text_grob("Population",  color = "black", face = "bold", size = 14, vjust = "-1"))
+
+# Display the final combined ASV plot
+combined_ASV_plot

@@ -1,0 +1,40 @@
+# This script contains R code (v4.0.2) for analyzing alpha diversity metrics.
+
+# Prerequisite: Excel sheet named "ASVs" that represents the 17 ASVs (or any number of ASVs you're interested in).
+# The first column should be labeled to identify samples (e.g., "Sample_ID").
+# The second, third, and fourth columns should contain metadata identifying Cross, Sire, and Pen information.
+# The remaining columns should contain ASV abundances calculated using qiime-2.
+# In our Excel sheet, we used the naming convention ASV.1, ASV.2, etc. for the ASV vectors of interest.
+
+# Load libraries
+library(ggpubr) # Version 0.4.0 was used; Kassambara 2020
+library(emmeans) # Version 1.4.8; Lenth et al., 2018
+
+# Construct a linear model for each ASV of interest (e.g. here for ASV.1) and perform pairwise comparisons using emmeans
+m_ASV1 <- lm(ASV.1 ~ Cross, data = ASVs)
+emmeans_m_ASV1 <- emmeans(m_ASV1, list(pairwise ~ Cross), adjust = "FDR", letter = "abc")
+pairs(emmeans_m_ASV1, letters = "abc")
+
+# Create compact letter display for the pairwise comparisons
+CLD(emmeans_m_ASV1, adjust = "FDR", Letters = "abcd", sort = FALSE)
+
+# Convert the Cross variable to a factor and specify the order of the levels
+ASV1$Cross <- as.character(stats$Cross)
+ASV1$Cross <- factor(stats$Cross, levels=c("BQ", "CAP", "CHILL", "NIT", "PUNT", "QUIN", "RC", "YIAL"))
+
+# Specify the Tukey comparison letters for ASV1 based on CLD output above
+ASV1_tukey <- c("ab", "a", "bc", "abc", "ab", "ab", "abc", "c") # example as for ASV1 in manuscript
+
+# Create a barplot for ASV1 using ggplot2 and add error bars and text labels for the Tukey comparison letters
+ASV1 <- ggplot(stats, aes(x = Cross, - Avg_ASV_1, y = Avg_ASV_1, fill = gray.colors)) + 
+  geom_bar(stat = "identity", position = "dodge", colour="black", size = 0.3) +
+  theme(legend.position = "left") + guides(fill = guide_legend(nrow = 20, ncol = 1)) + 
+  theme(text = element_text(family = "Arial")) + theme_linedraw() + ggtitle("ASV1 (Genus: Bacillus)") +
+  theme(plot.margin = unit(c(1,0.5,0,0.5), "cm")) +
+  geom_errorbar(aes(ymin = Avg_ASV_1 - CI_ASV_1, ymax = Avg_ASV_1 + CI_ASV_1), width = 0.2, position = position_dodge(0.9)) +
+  theme(legend.position = "") + ylab("Relative frequency") + 
+  theme(axis.title.x = element_blank()) + theme(axis.title.y = element_blank()) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 0.22)) +
+  geom_text(aes(label = ASV1_tukey, y = Avg_ASV_1 + CI_ASV_1, size = 8), vjust = -0.5) +
+  aes(stats = reorder(Cross, -Avg_ASV_1), y = Avg_ASV_1, fill = Cross)
+

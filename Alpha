@@ -1,0 +1,69 @@
+# This script contains R code (v4.0.2) for analyzing alpha diversity metrics.
+
+# Prerequisite: Excel file with a main sheet named "ADIV" that represents the dataset.
+# The first column should be labeled to identify samples (e.g., "Sample_ID").
+# The second, third, and fourth columns should contain metadata identifying Cross, Sire, and Pen information.
+# The remaining columns should contain alpha diversity metrics calculated using qiime-2.
+
+# Load the readxl library to  read an Excel file "my_file_path.xlsx" replaced for file path into R
+# Assign Excel sheet it to the object "ADIV".
+library(readxl) # Version 1.3.1
+
+# Load the Excel file into R
+ADIV <- read_excel("my_file_path.xlsx")
+
+# Load necessary libraries for model construction and pairwise t-tests:
+library(lme4) # Version 1.1-23; Bates et al., 2007
+library(emmeans) # Version 1.4.8; Lenth et al., 2018
+
+# Construct a linear model using the Chao1 index and perform an ANOVA:
+m_chao1 <- lm(ADIV$chao1 ~ Cross + Cross/Sire + Cross/Sire/Pen, data = ADIV)
+anova(m_chao1)
+
+# Perform another ANOVA on the same model using aov() for comparison with ANOVA() results:
+aov(m_chao1)
+
+# Calculate pairwise differences in the Chao1 index among Crosses:
+e_m_chao1 <- lm(ADIV$chao1 ~ Cross, data = ADIV)
+ee_m_chao1 <- emmeans(e_m_chao1, "Cross", adjust = "BH")
+pairs(ee_m_chao1)
+
+# Construct a linear model using the Shannon index and perform an ANOVA:
+m_shannon <- lm(ADIV$shannon ~ Cross + Cross/Sire + Cross/Sire/Pen, data = ADIV)
+anova(m_shannon)
+
+# Calculate pairwise differences in the Shannon index among different Cross categories:
+e_m_shannon <- lm(ADIV$shannon ~ Cross, data = ADIV)
+ee_m_shannon <- emmeans(e_m_shannon, "Cross", adjust = "BH")
+pairs(ee_m_shannon)
+
+# Construct a linear model using the Simpson index and perform an ANOVA:
+m_simpson <- lm(ADIV$simpson ~ Cross + Cross/Sire + Cross/Sire/Pen, data = ADIV)
+anova(m_simpson)
+
+# Calculate pairwise differences in the Simpson index among different Cross categories:
+e_m_simpson <- lm(ADIV$simpson ~ Cross, data = ADIV)
+ee_m_simpson <- emmeans(e_m_simpson, "Cross", adjust = "BH")
+pairs(ee_m_simpson)
+
+# Load necessary libraries for creating boxplots:
+library(ggplot2) # Version 3.3.2 was used; Wickham 2016
+library(ggpubr) # Version 0.4.0 was used; Kassambara 2020
+
+# Create boxplots for each diversity index:
+chao1_boxplot <- ggplot(ADIV, aes(x=Cross, y=chao1)) + 
+  geom_boxplot()
+
+shannon_boxplot <- ggplot(ADIV, aes(x=Cross, y=shannon)) + 
+  geom_boxplot()
+
+simpson_boxplot <- ggplot(ADIV, aes(x=Cross, y=simpson)) + 
+  geom_boxplot()
+
+# Add limits to each boxplot (Depending on presentation preferences):
+chao1_boxplot2 <- chao1_boxplot + expand_limits(x = 0, y = 0)
+simpson_boxplot2 <- simpson_boxplot + expand_limits(x = 0, y = 0)
+shannon_boxplot2 <- shannon_boxplot + expand_limits(x = 0, y = 0)
+
+# Combine all boxplots into one figure:
+ggarrange(chao1_boxplot, shannon_boxplot, simpson_boxplot, ncol = 3)
